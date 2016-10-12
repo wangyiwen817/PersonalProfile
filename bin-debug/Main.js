@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (c) 2014-2015, Egret Technology Inc.
+//  Copyright (c) 2014-present, Egret Technology.
 //  All rights reserved.
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are met:
@@ -96,103 +96,93 @@ var Main = (function (_super) {
             this.loadingView.setProgress(event.itemsLoaded, event.itemsTotal);
         }
     };
-    /**
-     * 创建游戏场景
-     * Create a game scene
-     */
     p.createGameScene = function () {
-        var sky = this.createBitmapByName("bg_jpg");
-        this.addChild(sky);
         var stageW = this.stage.stageWidth;
         var stageH = this.stage.stageHeight;
-        sky.width = stageW;
-        sky.height = stageH;
-        var topMask = new egret.Shape();
-        topMask.graphics.beginFill(0x000000, 0.5);
-        topMask.graphics.drawRect(0, 0, stageW, 172);
-        topMask.graphics.endFill();
-        topMask.y = 33;
-        this.addChild(topMask);
-        var icon = this.createBitmapByName("egret_icon_png");
-        this.addChild(icon);
-        icon.x = 26;
-        icon.y = 33;
-        var line = new egret.Shape();
-        line.graphics.lineStyle(2, 0xffffff);
-        line.graphics.moveTo(0, 0);
-        line.graphics.lineTo(0, 117);
-        line.graphics.endFill();
-        line.x = 172;
-        line.y = 61;
-        this.addChild(line);
-        var colorLabel = new egret.TextField();
-        colorLabel.textColor = 0xffffff;
-        colorLabel.width = stageW - 172;
-        colorLabel.textAlign = "center";
-        colorLabel.text = "Hello Egret";
-        colorLabel.size = 24;
-        colorLabel.x = 172;
-        colorLabel.y = 80;
-        this.addChild(colorLabel);
-        var textfield = new egret.TextField();
-        this.addChild(textfield);
-        textfield.alpha = 0;
-        textfield.width = stageW - 172;
-        textfield.textAlign = egret.HorizontalAlign.CENTER;
-        textfield.size = 24;
-        textfield.textColor = 0xffffff;
-        textfield.x = 172;
-        textfield.y = 135;
-        this.textfield = textfield;
-        //根据name关键字，异步获取一个json配置文件，name属性请参考resources/resource.json配置文件的内容。
-        // Get asynchronously a json configuration file according to name keyword. As for the property of name please refer to the configuration file of resources/resource.json.
+        var currentY = 0;
+        var beginY = 0;
+        var currentPage = 0;
+        var p1 = new page01();
+        p1.x = 0;
+        p1.y = 0;
+        p1.width = stageW;
+        p1.height = stageH;
+        this.p1_animator = p1;
+        this.addChild(p1);
+        p1.draw();
+        var p2 = new page02();
+        p2.x = 0;
+        p2.y = stageH;
+        p2.width = stageW;
+        p2.height = stageH;
+        this.p2_animator = p2;
+        this.addChild(p2);
+        p2.draw();
+        var pageArray = [p1, p2];
+        /////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////
+        this.stage.addEventListener(egret.TouchEvent.TOUCH_BEGIN, function (evt) {
+            beginY = evt.stageY;
+        }, this);
+        this.stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, function (evt) {
+            currentY = evt.stageY;
+            var dy = currentY - beginY;
+            if (currentPage == 0 && dy >= 0) {
+                pageArray[currentPage].y += dy / 100;
+            }
+            else if (currentPage == pageArray.length - 1 && dy <= 0) {
+                pageArray[currentPage].y += dy / 100;
+            }
+            else if (dy <= 0) {
+                pageArray[currentPage + 1].y += dy / 100;
+                pageArray[currentPage].y += dy / 100;
+            }
+            else {
+                pageArray[currentPage].y += dy / 100;
+                pageArray[currentPage - 1].y += dy / 100;
+            }
+        }, this);
+        this.stage.addEventListener(egret.TouchEvent.TOUCH_END, function (evt) {
+            currentY = evt.stageY;
+            var dy = currentY - beginY;
+            if (currentPage == pageArray.length - 1 && dy <= 0) {
+                egret.Tween.get(pageArray[currentPage]).to({ x: 0, y: 0 }, 300);
+                egret.Tween.get(pageArray[currentPage - 1]).to({ x: 0, y: -stageH }, 300);
+            }
+            else if (currentPage == 0 && dy >= 0) {
+                egret.Tween.get(pageArray[currentPage]).to({ x: 0, y: 0 }, 300);
+                egret.Tween.get(pageArray[currentPage + 1]).to({ x: 0, y: stageH }, 300);
+            }
+            else if (dy <= -stageH / 2) {
+                egret.Tween.get(pageArray[currentPage]).to({ x: 0, y: -stageH }, 300);
+                egret.Tween.get(pageArray[currentPage + 1]).to({ x: 0, y: 0 }, 300);
+                currentPage++;
+            }
+            else if (dy > -stageH / 2 && dy <= 0) {
+                egret.Tween.get(pageArray[currentPage]).to({ x: 0, y: 0 }, 300);
+                egret.Tween.get(pageArray[currentPage + 1]).to({ x: 0, y: stageH }, 300);
+            }
+            else if (dy > 0 && dy < stageH / 2) {
+                egret.Tween.get(pageArray[currentPage]).to({ x: 0, y: 0 }, 300);
+                egret.Tween.get(pageArray[currentPage - 1]).to({ x: 0, y: -stageH }, 300);
+            }
+            else if (dy >= stageH / 2) {
+                egret.Tween.get(pageArray[currentPage]).to({ x: 0, y: stageH }, 300);
+                egret.Tween.get(pageArray[currentPage - 1]).to({ x: 0, y: 0 }, 300);
+                currentPage--;
+            }
+            console.log(currentPage);
+        }, this);
+        //////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////
         RES.getResAsync("description_json", this.startAnimation, this);
     };
-    /**
-     * 根据name关键字创建一个Bitmap对象。name属性请参考resources/resource.json配置文件的内容。
-     * Create a Bitmap object according to name keyword.As for the property of name please refer to the configuration file of resources/resource.json.
-     */
-    p.createBitmapByName = function (name) {
-        var result = new egret.Bitmap();
-        var texture = RES.getRes(name);
-        result.texture = texture;
-        return result;
-    };
-    /**
-     * 描述文件加载成功，开始播放动画
-     * Description file loading is successful, start to play the animation
-     */
     p.startAnimation = function (result) {
         var self = this;
-        var parser = new egret.HtmlTextParser();
-        var textflowArr = [];
-        for (var i = 0; i < result.length; i++) {
-            textflowArr.push(parser.parser(result[i]));
-        }
-        var textfield = self.textfield;
-        var count = -1;
-        var change = function () {
-            count++;
-            if (count >= textflowArr.length) {
-                count = 0;
-            }
-            var lineArr = textflowArr[count];
-            self.changeDescription(textfield, lineArr);
-            var tw = egret.Tween.get(textfield);
-            tw.to({ "alpha": 1 }, 200);
-            tw.wait(2000);
-            tw.to({ "alpha": 0 }, 200);
-            tw.call(change, self);
-        };
-        change();
-    };
-    /**
-     * 切换描述内容
-     * Switch to described content
-     */
-    p.changeDescription = function (textfield, textFlow) {
-        textfield.textFlow = textFlow;
+        self.p1_animator.change();
+        self.p2_animator.change();
     };
     return Main;
 }(egret.DisplayObjectContainer));
 egret.registerClass(Main,'Main');
+//# sourceMappingURL=Main.js.map
